@@ -40,6 +40,15 @@ def extract_pose_and_elan(video_file, label):
         print(f"Error in video_to_pose: {e.stdout}\n{e.stderr}")
         raise RuntimeError(f"Failed to extract pose: {e}")
 
+import numpy as np
+
+def pad_vector(vector, target_size):
+    if vector.shape[0] < target_size:
+        padding = np.zeros(target_size - vector.shape[0])
+        return np.concatenate([vector, padding])
+    else:
+        return vector[:target_size]
+
 def predict_label(video_file):
     label = os.path.basename(video_file).split('.')[0]
     try:
@@ -57,7 +66,6 @@ def predict_label(video_file):
         print(f"Original vector shape: {vector.shape}")
         print(f"Vector type: {vector.dtype}")
 
-        # Use the TFLite model to get the vector
         input_details = interpreter.get_input_details()
         output_details = interpreter.get_output_details()
 
@@ -67,29 +75,37 @@ def predict_label(video_file):
         expected_shape = input_details[0]['shape']
         print(f"Expected input shape: {expected_shape}")
 
-        # Reshape or pad the vector to match the expected input shape
-        if expected_shape[1] > vector.shape[0]:
-            # If the expected shape is larger, pad the vector
-            pad_width = expected_shape[1] - vector.shape[0]
-            padded_vector = np.pad(vector, (0, pad_width), mode='constant')
-            reshaped_vector = padded_vector.reshape(expected_shape)
-        elif expected_shape[1] < vector.shape[0]:
-            # If the expected shape is smaller, truncate the vector
-            reshaped_vector = vector[:expected_shape[1]].reshape(expected_shape)
+        # Pad or truncate the vector to match the expected input size
+        if vector.shape[0] < 543:
+            padded_vector = np.pad(vector, (0, 543 - vector.shape[0]), mode='constant')
         else:
-            reshaped_vector = vector.reshape(expected_shape)
+            padded_vector = vector[:543]
+
+        # Reshape the vector to match the expected input shape (1, 543, 3)
+        reshaped_vector = padded_vector.reshape(1, 543, 1)
+        reshaped_vector = np.repeat(reshaped_vector, 3, axis=2)
 
         print(f"Reshaped vector shape: {reshaped_vector.shape}")
 
         interpreter.set_tensor(input_details[0]['index'], reshaped_vector.astype(np.float32))
         interpreter.invoke()
-        output_vector = interpreter.get_tensor(output_details[0]['index'])[0]
+        output_vector = interpreter.get_tensor(output_details[0]['index'])
 
         print(f"Output vector shape: {output_vector.shape}")
 
+        # Ensure the output is 2D for KNN prediction
+        if output_vector.ndim == 1:
+            output_vector = output_vector.reshape(1, -1)
+        elif output_vector.ndim == 0:
+            output_vector = output_vector.reshape(1, 1)
+
+        print(f"Reshaped output vector for KNN: {output_vector.shape}")
+
         # Predict using KNN model
-        prediction = knn_model.predict([output_vector])
-        return prediction[0]
+        prediction = knn_model.predict(output_vector)
+        print(prediction)
+        # predicted_label = knn_model.classes_[prediction[0]]
+        return prediction
     except Exception as e:
         print(f"Error in predict_label: {str(e)}")
         raise

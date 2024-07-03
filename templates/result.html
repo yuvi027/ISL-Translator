@@ -3,12 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Translation Result</title>
+    <title>Sign Language Translation Result</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
+        h1 { color: #333; }
+        .result { background-color: #f4f4f4; padding: 10px; border-radius: 5px; }
+    </style>
 </head>
 <body>
-    <h1>Translation Result</h1>
-    <p>Uploaded file: {{ filename }}</p>
-    <p>Prediction: {{ prediction }}</p>
-    <a href="/">Upload another video</a>
+    <h1>Sign Language Translation Result</h1>
+    <div class="result">
+        <p><strong>Uploaded file:</strong> {{ filename }}</p>
+        <p><strong>Translated Sign:</strong> {{ prediction }}</p>
+    </div>
+    <p><a href="/">Translate another video</a></p>
 </body>
 </html>
