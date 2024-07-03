@@ -49,6 +49,24 @@ def pad_vector(vector, target_size):
     else:
         return vector[:target_size]
 
+import numpy as np
+from scipy.spatial.distance import euclidean
+import pandas as pd
+
+import numpy as np
+import pandas as pd
+import joblib
+
+import numpy as np
+import joblib
+
+import numpy as np
+import joblib
+
+# Load the new Random Forest model and scaler
+rf_model = joblib.load('rf_model.joblib')
+scaler = joblib.load('minmax_scaler.joblib')
+
 def predict_label(video_file):
     label = os.path.basename(video_file).split('.')[0]
     try:
@@ -64,22 +82,15 @@ def predict_label(video_file):
         vector = predict(pose)
 
         print(f"Original vector shape: {vector.shape}")
-        print(f"Vector type: {vector.dtype}")
 
         input_details = interpreter.get_input_details()
         output_details = interpreter.get_output_details()
 
-        print(f"Input details: {input_details}")
-        print(f"Output details: {output_details}")
-
         expected_shape = input_details[0]['shape']
         print(f"Expected input shape: {expected_shape}")
 
-        # Pad or truncate the vector to match the expected input size
-        if vector.shape[0] < 543:
-            padded_vector = np.pad(vector, (0, 543 - vector.shape[0]), mode='constant')
-        else:
-            padded_vector = vector[:543]
+        # Pad the vector to 543 elements
+        padded_vector = np.pad(vector, (0, 543 - vector.shape[0]), mode='constant')
 
         # Reshape the vector to match the expected input shape (1, 543, 3)
         reshaped_vector = padded_vector.reshape(1, 543, 1)
@@ -91,24 +102,28 @@ def predict_label(video_file):
         interpreter.invoke()
         output_vector = interpreter.get_tensor(output_details[0]['index'])
 
-        print(f"Output vector shape: {output_vector.shape}")
+        # Ensure the output vector is 1D and has 250 elements
+        output_vector = output_vector.flatten()[:250]
+        
+        print(f"Processed output vector shape: {output_vector.shape}")
 
-        # Ensure the output is 2D for KNN prediction
-        if output_vector.ndim == 1:
-            output_vector = output_vector.reshape(1, -1)
-        elif output_vector.ndim == 0:
-            output_vector = output_vector.reshape(1, 1)
+        # Scale the output vector
+        scaled_vector = scaler.transform([output_vector])
 
-        print(f"Reshaped output vector for KNN: {output_vector.shape}")
+        # Use Random Forest model to predict the label
+        predicted_label = rf_model.predict(scaled_vector)[0]
 
-        # Predict using KNN model
-        prediction = knn_model.predict(output_vector)
-        print(prediction)
-        # predicted_label = knn_model.classes_[prediction[0]]
-        return prediction
+        print(f"Predicted label: {predicted_label}")
+
+        return predicted_label
+
     except Exception as e:
         print(f"Error in predict_label: {str(e)}")
+        print(f"Error type: {type(e)}")
+        import traceback
+        traceback.print_exc()
         raise
+
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
