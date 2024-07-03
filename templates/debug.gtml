@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Information</title>
+</head>
+<body>
+    <h1>Debug Information</h1>
+    <h2>Input Details</h2>
+    <pre>{{ input_details | pprint }}</pre>
+    <h2>Output Details</h2>
+    <pre>{{ output_details | pprint }}</pre>
+</body>
+</html>

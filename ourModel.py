@@ -9,11 +9,16 @@ from pose_format import Pose
 
 
 # Install necessary packages
-!pip install git+https://github.com/sign-language-processing/pose.git
-!pip install mediapipe vidgear
-!pip install git+https://github.com/sign-language-processing/segmentation
-!pip install git+https://github.com/sign-language-processing/recognition
-!pip install scikit-learn pandas joblib
+# !pip install git+https://github.com/sign-language-processing/pose.git
+# pip install pose-format
+# !pip install mediapipe vidgear
+# !pip install git+https://github.com/sign-language-processing/segmentation
+# !pip install git+https://github.com/sign-language-processing/recognition
+# !pip install scikit-learn pandas joblib
+# !pip install flask
+# !pip install tensorflow
+# !pip install tensorflow_hub
+# !pip install flask numpy tensorflow tensorflow-hub opencv-python-headless
 
 from IPython.display import Video
 
