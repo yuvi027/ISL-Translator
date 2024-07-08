@@ -64,8 +64,18 @@ import numpy as np
 import joblib
 
 # Load the new Random Forest model and scaler
-rf_model = joblib.load('rf_model.joblib')
-scaler = joblib.load('minmax_scaler.joblib')
+# rf_model = joblib.load('rf_model.joblib')
+# scaler = joblib.load('minmax_scaler.joblib')
+knn = joblib.load('current_knn_model.joblib')
+
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+
+# Load the KNN model
+knn = joblib.load('current_knn_model.joblib')
+
+# Create a scaler (you might need to load a pre-fitted scaler if you used one during training)
+scaler = StandardScaler()
 
 def predict_label(video_file):
     label = os.path.basename(video_file).split('.')[0]
@@ -107,13 +117,25 @@ def predict_label(video_file):
         
         print(f"Processed output vector shape: {output_vector.shape}")
 
-        # Scale the output vector
-        scaled_vector = scaler.transform([output_vector])
+        # Reshape the output vector to 2D array with one sample
+        output_vector_2d = output_vector.reshape(1, -1)
 
-        # Use Random Forest model to predict the label
-        predicted_label = rf_model.predict(scaled_vector)[0]
+        # Scale the features
+        output_vector_2d_scaled = scaler.fit_transform(output_vector_2d)
+
+        # Print KNN model information
+        print(f"KNN model n_neighbors: {knn.n_neighbors}")
+        print(f"KNN model metric: {knn.metric}")
+        print(f"KNN model n_samples_fit: {knn.n_samples_fit_}")
+        print(f"KNN model n_features_in: {knn.n_features_in_}")
+
+        # Get predictions and probabilities
+        predicted_label = knn.predict(output_vector_2d_scaled)[0]
+        probabilities = knn.predict_proba(output_vector_2d_scaled)[0]
 
         print(f"Predicted label: {predicted_label}")
+        print(f"Prediction probabilities: {probabilities}")
+        print(f"Unique classes: {knn.classes_}")
 
         return predicted_label
 

@@ -9,16 +9,16 @@ from pose_format import Pose
 
 
 # Install necessary packages
-# !pip install git+https://github.com/sign-language-processing/pose.git
+# pip install git+https://github.com/sign-language-processing/pose.git
 # pip install pose-format
-# !pip install mediapipe vidgear
-# !pip install git+https://github.com/sign-language-processing/segmentation
-# !pip install git+https://github.com/sign-language-processing/recognition
-# !pip install scikit-learn pandas joblib
-# !pip install flask
-# !pip install tensorflow
-# !pip install tensorflow_hub
-# !pip install flask numpy tensorflow tensorflow-hub opencv-python-headless
+# pip install mediapipe vidgear
+# pip install git+https://github.com/sign-language-processing/segmentation
+# pip install git+https://github.com/sign-language-processing/recognition
+# pip install scikit-learn pandas joblib
+# pip install flask
+# pip install tensorflow
+# pip install tensorflow_hub
+# pip install flask numpy tensorflow tensorflow-hub opencv-python-headless
 
 from IPython.display import Video
 
@@ -37,8 +37,9 @@ def extract_pose_and_elan(
 		 pose_file], check=True)
 
 	return pose_file
+# interpreter = tf.lite.Interpreter(model_path="model.tflite")
 
-def predict_label(new_video_file, model_name="kaggle_asl_signs", knn_model_path=model_path):
+def predict_label(new_video_file, model_name="kaggle_asl_signs", knn_model_path="/workspaces/ISL-Translator/knn_model.joblib"):
     # Extract pose and ELAN files from the new video
     new_pose_file = extract_pose_and_elan(new_video_file)
 
@@ -56,100 +57,113 @@ def predict_label(new_video_file, model_name="kaggle_asl_signs", knn_model_path=
     prediction = knn.predict([vector])
     return prediction
 
+import os
+import glob
+import pandas as pd
 from sign_language_recognition.kaggle_asl_signs import predict
 from pose_format import Pose
 
-# Specify the directory in Google Drive containing your video files
-video_directory = '/content/drive/My Drive/EngineeringProject/videos/train'
+# Specify the directory in the project containing your video files
+video_directory = os.path.join('data', 'videos', 'train')
 
 # List all video files in the directory
 video_files = glob.glob(os.path.join(video_directory, '*1.mp4'))
-# video_files = glob.glob("/content/drive/My Drive/EngineeringProject/videos/train/Can1.mp4")
 # Ensure the lists are sorted
 video_files.sort()
-
 
 # Create an empty DataFrame to hold the vectors and labels
 dataset = pd.DataFrame()
 
+# Function to extract pose (you'll need to implement this based on your specific requirements)
+def extract_pose_and_elan(video_file, label):
+    # Implement your pose extraction logic here
+    # This should return the path to the extracted pose file
+    pose_file = os.path.join('data', 'poses', f"{label}.pose")
+    subprocess.run(['video_to_pose', '--format', 'mediapipe', '-i', video_file, '-o', pose_file], check=True)
+    # Your pose extraction code here
+    return pose_file
+
 # Process each video, extract vectors, and add to the dataset
 for video_file in video_files:
-  # Example: Infer label from filename (assuming the format is 'label.mp4')
+    # Example: Infer label from filename (assuming the format is 'label1.mp4')
     label = os.path.basename(video_file).split('1')[0]
     print(label)
 
-    pose_file = extract_pose_and_elan(video_file, label)
+    pose = extract_pose_and_elan(video_file, label)
+    print("pose = ",pose)
+    pose_file="/workspaces/ISL-Translator/"+pose
+    print("pose_file = ",pose_file)
 
-    print("pose_file name:",pose_file)
-    # ! visualize_pose -i "$pose_file" -o example-skeleton.mp4
-    # print("\n\nhi\n\n")
-    # Video("example-skeleton.mp4", embed=True)
-    data_buffer = open(pose_file, "rb").read()
+
+    print("pose_file name:", pose_file)
+
+    with open(pose_file, "rb") as f:
+        data_buffer = f.read()
     pose = Pose.read(data_buffer)
 
     vector = predict(pose)
-    # Test the vector extraction
 
     vector_df = pd.DataFrame([vector])
-    # print(vector_df)
     vector_df['label'] = label
     dataset = pd.concat([dataset, vector_df], ignore_index=True)
 
-# Save the dataset to Google Drive
-dataset_path = '/content/drive/My Drive/EngineeringProject/Dataset.csv'
+# Save the dataset to a file in the project
+dataset_path = os.path.join('data', 'Dataset1.csv')
 dataset.to_csv(dataset_path, index=False)
 
-#TODO: import as the model_path our knn model from drive
-import os
-import glob
-import pandas as pd
-# from sign_language_recognition.kaggle_asl_signs import predict
-from pose_format import Pose
 
-# Specify the directory in Google Drive containing your video files
-video_directory = '/content/drive/My Drive/EngineeringProject/videos/test'
+# EVALUATION
+# #TODO: import as the model_path our knn model from drive
+# import os
+# import glob
+# import pandas as pd
+# # from sign_language_recognition.kaggle_asl_signs import predict
+# from pose_format import Pose
 
-# List all video files in the directory
-video_files = glob.glob(os.path.join(video_directory, '*2.mp4'))
-# Ensure the lists are sorted
-video_files.sort()
+# # Specify the directory in Google Drive containing your video files
+# video_directory = '/content/drive/My Drive/EngineeringProject/videos/test'
 
-# Create an empty DataFrame to hold the vectors and labels
-eval = pd.DataFrame(columns=['Label', 'Prediction', 'Match'])
+# # List all video files in the directory
+# video_files = glob.glob(os.path.join(video_directory, '*2.mp4'))
+# # Ensure the lists are sorted
+# video_files.sort()
 
-# Helper function to normalize strings
-def normalize_string(s):
-    return ''.join(e for e in s.lower() if e.isalnum())
+# # Create an empty DataFrame to hold the vectors and labels
+# eval = pd.DataFrame(columns=['Label', 'Prediction', 'Match'])
 
-# Process each video, extract vectors, and add to the dataset
-for video_file in video_files:
-    # Example: Infer label from filename (assuming the format is 'label.mp4')
-    label = os.path.basename(video_file).split('1')[0]
-    print(f"Processing: {label}")
-    prediction = predict_label(video_file)  # Assuming predict_label is a typo and should be predict
+# # Helper function to normalize strings
+# def normalize_string(s):
+#     return ''.join(e for e in s.lower() if e.isalnum())
 
-    # Normalize label and prediction for comparison
-    # normalized_label = normalize_string(label)
-    # normalized_prediction = normalize_string(prediction)
+# # Process each video, extract vectors, and add to the dataset
+# for video_file in video_files:
+#     # Example: Infer label from filename (assuming the format is 'label.mp4')
+#     label = os.path.basename(video_file).split('1')[0]
+#     print(f"Processing: {label}")
+#     prediction = predict_label(video_file)  # Assuming predict_label is a typo and should be predict
 
-    # Determine if they match
-    match = 1 if label == prediction else 0
+#     # Normalize label and prediction for comparison
+#     # normalized_label = normalize_string(label)
+#     # normalized_prediction = normalize_string(prediction)
 
-    # Append to DataFrame
-    eval = pd.concat([eval, pd.DataFrame({'Label': [label], 'Prediction': [prediction], 'Match': [match]})], ignore_index=True)
+#     # Determine if they match
+#     match = 1 if label == prediction else 0
 
-# Calculate accuracy and number of matches
-num_matches = eval['Match'].sum()
-accuracy = (num_matches / len(eval)) * 100 if len(eval) > 0 else 0
+#     # Append to DataFrame
+#     eval = pd.concat([eval, pd.DataFrame({'Label': [label], 'Prediction': [prediction], 'Match': [match]})], ignore_index=True)
 
-print(f"Accuracy: {accuracy}%")
-print(f"Number of matches: {num_matches}")
-print(f"Number of words: {len(eval)}")
+# # Calculate accuracy and number of matches
+# num_matches = eval['Match'].sum()
+# accuracy = (num_matches / len(eval)) * 100 if len(eval) > 0 else 0
 
-# Add accuracy and number of matches as new rows in the DataFrame (optional)
-eval = pd.concat([eval, pd.DataFrame({'Label': ['Accuracy'], 'Prediction': [f'{accuracy}%'], 'Match': [num_matches]})], ignore_index=True)
+# print(f"Accuracy: {accuracy}%")
+# print(f"Number of matches: {num_matches}")
+# print(f"Number of words: {len(eval)}")
 
-# Save the dataset to Google Drive
-eval_path = '/content/drive/My Drive/EngineeringProject/KNN-evaluation.csv'
-eval.to_csv(eval_path, index=False)
+# # Add accuracy and number of matches as new rows in the DataFrame (optional)
+# eval = pd.concat([eval, pd.DataFrame({'Label': ['Accuracy'], 'Prediction': [f'{accuracy}%'], 'Match': [num_matches]})], ignore_index=True)
+
+# # Save the dataset to Google Drive
+# eval_path = '/content/drive/My Drive/EngineeringProject/KNN-evaluation.csv'
+# eval.to_csv(eval_path, index=False)
 
