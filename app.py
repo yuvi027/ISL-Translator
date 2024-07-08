@@ -91,37 +91,37 @@ def predict_label(video_file):
         pose = Pose.read(data_buffer)
         vector = predict(pose)
 
-        print(f"Original vector shape: {vector.shape}")
+        # print(f"Original vector shape: {vector.shape}")
 
-        input_details = interpreter.get_input_details()
-        output_details = interpreter.get_output_details()
+        # input_details = interpreter.get_input_details()
+        # output_details = interpreter.get_output_details()
 
-        expected_shape = input_details[0]['shape']
-        print(f"Expected input shape: {expected_shape}")
+        # expected_shape = input_details[0]['shape']
+        # print(f"Expected input shape: {expected_shape}")
 
-        # Pad the vector to 543 elements
-        padded_vector = np.pad(vector, (0, 543 - vector.shape[0]), mode='constant')
+        # # Pad the vector to 543 elements
+        # padded_vector = np.pad(vector, (0, 543 - vector.shape[0]), mode='constant')
 
-        # Reshape the vector to match the expected input shape (1, 543, 3)
-        reshaped_vector = padded_vector.reshape(1, 543, 1)
-        reshaped_vector = np.repeat(reshaped_vector, 3, axis=2)
+        # # Reshape the vector to match the expected input shape (1, 543, 3)
+        # reshaped_vector = padded_vector.reshape(1, 543, 1)
+        # reshaped_vector = np.repeat(reshaped_vector, 3, axis=2)
 
-        print(f"Reshaped vector shape: {reshaped_vector.shape}")
+        # print(f"Reshaped vector shape: {reshaped_vector.shape}")
 
-        interpreter.set_tensor(input_details[0]['index'], reshaped_vector.astype(np.float32))
-        interpreter.invoke()
-        output_vector = interpreter.get_tensor(output_details[0]['index'])
+        # interpreter.set_tensor(input_details[0]['index'], reshaped_vector.astype(np.float32))
+        # interpreter.invoke()
+        # output_vector = interpreter.get_tensor(output_details[0]['index'])
 
-        # Ensure the output vector is 1D and has 250 elements
-        output_vector = output_vector.flatten()[:250]
+        # # Ensure the output vector is 1D and has 250 elements
+        # output_vector = output_vector.flatten()[:250]
         
-        print(f"Processed output vector shape: {output_vector.shape}")
+        # print(f"Processed output vector shape: {output_vector.shape}")
 
-        # Reshape the output vector to 2D array with one sample
-        output_vector_2d = output_vector.reshape(1, -1)
+        # # Reshape the output vector to 2D array with one sample
+        # output_vector_2d = output_vector.reshape(1, -1)
 
-        # Scale the features
-        output_vector_2d_scaled = scaler.fit_transform(output_vector_2d)
+        # # Scale the features
+        # # output_vector_2d_scaled = scaler.fit_transform(output_vector_2d)
 
         # Print KNN model information
         print(f"KNN model n_neighbors: {knn.n_neighbors}")
@@ -130,11 +130,11 @@ def predict_label(video_file):
         print(f"KNN model n_features_in: {knn.n_features_in_}")
 
         # Get predictions and probabilities
-        predicted_label = knn.predict(output_vector_2d_scaled)[0]
-        probabilities = knn.predict_proba(output_vector_2d_scaled)[0]
+        predicted_label = knn.predict(vector.reshape(1,-1))[0]
+        # probabilities = knn.predict_proba(vector.reshape(1,-1))[0]
 
         print(f"Predicted label: {predicted_label}")
-        print(f"Prediction probabilities: {probabilities}")
+        # print(f"Prediction probabilities: {probabilities}")
         print(f"Unique classes: {knn.classes_}")
 
         return predicted_label
