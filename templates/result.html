@@ -5,9 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Language Translation Result</title>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
-        h1 { color: #333; }
-        .result { background-color: #f4f4f4; padding: 10px; border-radius: 5px; }
+        body { 
+            text-align: center; 
+            background-color: #b9f0ea; 
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+        }
+        h1 { 
+            color: #1e9dbd; 
+            font-family: 'Brush Script MT', cursive; 
+            font-size: 40px;
+        }
+        .result { 
+            padding: 10px; 
+            border-radius: 5px; 
+            margin: 20px auto;
+            max-width: 600px;
+        }
+        .video-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        video {
+            width: 33.33%; /* This makes the video one-third of the screen width */
+            max-height: 33.33vh; /* This limits the height to one-third of the viewport height */
+            object-fit: contain; /* This ensures the video maintains its aspect ratio */
+        }
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #1e9dbd;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        a:hover {
+            background-color: #167d99;
+        }
     </style>
 </head>
 <body>
@@ -16,6 +53,14 @@
         <p><strong>Uploaded file:</strong> {{ filename }}</p>
         <p><strong>Translated Sign:</strong> {{ prediction }}</p>
     </div>
+    
+    <div class="video-container">
+        <video controls>
+            <source src="{{ url_for('static', filename='uploads/' + filename) }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+    
     <p><a href="/">Translate another video</a></p>
 </body>
 </html>

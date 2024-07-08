@@ -4,6 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Upload</title>
+    <style>
+        body { 
+            text-align: center; 
+            background-color: #b9f0ea; 
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        h1 { 
+            color: #1e9dbd; 
+            font-family: 'Brush Script MT', cursive; 
+            font-size: 40px;
+        }
+        form {
+            margin-top: 20px;
+        }
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+        .file-input-wrapper .file-input-button {
+            padding: 10px 20px;
+            background-color: #1e9dbd;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            display: inline-block;
+        }
+        .file-input-wrapper .file-input-button:hover {
+            background-color: #167d99;
+        }
+        .file-name {
+            display: block;
+            margin-top: 10px;
+            color: #1e9dbd;
+            font-family: 'Brush Script MT', cursive;
+            font-size: 20px;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #1e9dbd;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        input[type="submit"]:hover {
+            background-color: #167d99;
+        }
+        .flashes {
+            list-style-type: none;
+            padding: 0;
+        }
+        .flashes li {
+            color: #e74c3c;
+            margin-bottom: 10px;
+        }
+        .image-container {
+            width: 100%;
+            /* margin-top: auto; */
+        }
+        .image-container img {
+            width: 100%;
+            display: block;
+            /* max-height: 200px; */
+            object-fit: cover;
+        }
+    </style>
 </head>
 <body>
     <h1>Upload a Video</h1>
@@ -17,8 +100,24 @@
         {% endif %}
     {% endwith %}
     <form method="post" enctype="multipart/form-data">
-        <input type="file" name="file" accept=".mp4">
+        <div class="file-input-wrapper">
+            <span class="file-input-button">Choose File</span>
+            <input type="file" name="file" accept=".mp4" id="file-input">
+        </div>
+        <span id="file-name" class="file-name">No file chosen</span><br>
         <input type="submit" value="Upload and Translate">
     </form>
+
+    <script>
+        document.getElementById('file-input').addEventListener('change', function() {
+            var fileName = this.value.split('\\').pop();
+            document.getElementById('file-name').textContent = fileName || 'No file chosen';
+        });
+    </script>
+
+    <div class="image-container">
+        <img src="{{ url_for('static', filename='asl.png') }}" alt="ASL Image">
+    </div>
+    
 </body>
 </html>
