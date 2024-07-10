@@ -1,22 +1,26 @@
 import os
-from flask import Flask, request, render_template, redirect, url_for, flash, send_from_directory
+import logging
+import numpy as np
+from flask import Flask, request, render_template, redirect, url_for, flash, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
 import joblib
 import tensorflow as tf
 from pose_format import Pose
 from sign_language_recognition.kaggle_asl_signs import predict
 import subprocess
-from IPython.display import Video
+from sklearn.neighbors import KNeighborsClassifier
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = 'some_secret_key'  # Required for flashing messages
+app.secret_key = 'some_secret_key'
 
-# Configure upload folder
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'mp4'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Load the TFLite model FOR DEBUGGING
 interpreter = tf.lite.Interpreter(model_path="model.tflite")
 interpreter.allocate_tensors()
 
@@ -34,11 +38,24 @@ def extract_pose_and_elan(video_file, label):
         )
         return pose_file
     except subprocess.CalledProcessError as e:
-        print(f"Error in video_to_pose: {e.stdout}\n{e.stderr}")
+        logger.error(f"Error in video_to_pose: {e.stdout}\n{e.stderr}")
         raise RuntimeError(f"Failed to extract pose: {e}")
 
-# Load the KNN model
-knn = joblib.load('current_knn_model.joblib')
+def initialize_or_load_knn():
+    try:
+        knn = joblib.load('current_knn_model.joblib')
+        logger.info("Loaded existing KNN model")
+    except FileNotFoundError:
+        logger.info("No existing KNN model found. Initializing new model.")
+        knn = KNeighborsClassifier(n_neighbors=5)  # Adjust n_neighbors as needed
+        # Initialize with dummy data
+        X = np.array([[0] * 100])  # Adjust the dimension based on your vector size
+        y = np.array(['dummy'])
+        knn.fit(X, y)
+        joblib.dump(knn, 'current_knn_model.joblib')
+    return knn
+
+knn = initialize_or_load_knn()
 
 def predict_label(video_file):
     label = os.path.basename(video_file).split('.')[0]
@@ -54,25 +71,12 @@ def predict_label(video_file):
         pose = Pose.read(data_buffer)
         vector = predict(pose)
 
-        # Print KNN model information FOR DEBUGGING
-        print(f"KNN model n_neighbors: {knn.n_neighbors}")
-        print(f"KNN model metric: {knn.metric}")
-        print(f"KNN model n_samples_fit: {knn.n_samples_fit_}")
-        print(f"KNN model n_features_in: {knn.n_features_in_}")
-
-        # Get predictions and probabilities
         predicted_label = knn.predict(vector.reshape(1,-1))[0]
-        probabilities = knn.predict_proba(vector.reshape(1,-1))[0]
 
-        print(f"Predicted label: {predicted_label}")
-        print(f"Prediction probabilities: {probabilities}")
-        print(f"Unique classes: {knn.classes_}")
-
-        return predicted_label
+        return predicted_label, vector
 
     except Exception as e:
-        print(f"Error in predict_label: {str(e)}")
-        print(f"Error type: {type(e)}")
+        logger.error(f"Error in predict_label: {str(e)}")
         import traceback
         traceback.print_exc()
         raise
@@ -99,17 +103,44 @@ def upload_file():
 def translate(filename):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     try:
-        prediction = predict_label(filepath)
-        return render_template('result.html', filename=filename, prediction=prediction)
+        prediction, vector = predict_label(filepath)
+        return render_template('result.html', filename=filename, prediction=prediction, vector=vector.tolist())
     except Exception as e:
         flash(f"An error occurred: {str(e)}")
         return redirect(url_for('upload_file'))
 
-@app.route('/debug')
-def debug_info():
-    return render_template('debug.html', 
-                           input_details=interpreter.get_input_details(),
-                           output_details=interpreter.get_output_details())
+@app.route('/update_dataset', methods=['POST'])
+def update_dataset():
+    data = request.json
+    label = data['label']
+    vector = np.array(data['vector'])
+
+    logger.debug(f"Received data - Label: {label}, Vector shape: {vector.shape}")
+
+    try:
+        # Load the current dataset
+        X = knn._fit_X
+        y = knn._y
+
+        logger.debug(f"Current dataset - X shape: {X.shape}, y shape: {y.shape}")
+
+        # Add the new data point
+        X = np.vstack((X, vector))
+        y = np.append(y, label)
+
+        logger.debug(f"Updated dataset - X shape: {X.shape}, y shape: {y.shape}")
+
+        # Retrain the model
+        knn.fit(X, y)
+
+        # Save the updated model
+        joblib.dump(knn, 'current_knn_model.joblib')
+        logger.info("Model updated and saved successfully")
+
+        return jsonify({"status": "success", "message": "Dataset updated and model retrained"})
+    except Exception as e:
+        logger.error(f"Error updating dataset: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):

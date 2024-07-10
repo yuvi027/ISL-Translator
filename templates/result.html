@@ -9,15 +9,15 @@
             text-align: center; 
             background-color: #b9f0ea; 
             font-size: 20px;
-            font-family: Arial, sans-serif;
+            font-family: Verdana, sans-serif;
         }
         h1 { 
             color: #1e9dbd; 
-            font-family: 'Brush Script MT', cursive; 
+            font-family: Verdana, sans-serif; 
             font-size: 40px;
         }
         .result { 
-            padding: 10px; 
+            font-size: 50px;
             border-radius: 5px; 
             margin: 20px auto;
             max-width: 600px;
@@ -29,9 +29,9 @@
             margin: 20px 0;
         }
         video {
-            width: 33.33%; /* This makes the video one-third of the screen width */
-            max-height: 33.33vh; /* This limits the height to one-third of the viewport height */
-            object-fit: contain; /* This ensures the video maintains its aspect ratio */
+            width: 33.33%;
+            max-height: 33.33vh;
+            object-fit: contain;
         }
         a {
             display: inline-block;
@@ -45,13 +45,58 @@
         a:hover {
             background-color: #167d99;
         }
+        .feedback-container {
+            margin-top: 20px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        #correct-translation {
+            display: none;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <h1>Sign Language Translation Result</h1>
     <div class="result">
-        <p><strong>Uploaded file:</strong> {{ filename }}</p>
-        <p><strong>Translated Sign:</strong> {{ prediction }}</p>
+        <p><strong>{{ prediction }}</strong></p>
     </div>
     
     <div class="video-container">
@@ -60,7 +105,68 @@
             Your browser does not support the video tag.
         </video>
     </div>
+
+    <div class="feedback-container">
+        <p>Was the translation accurate?</p>
+        <label class="switch">
+            <input type="checkbox" id="accuracy-toggle" checked>
+            <span class="slider"></span>
+        </label>
+        <span id="toggle-label">Yes</span>
+    </div>
+    <input type="text" id="correct-translation" placeholder="Enter correct translation">
     
     <p><a href="/">Translate another video</a></p>
+
+    <script>
+        const toggle = document.getElementById('accuracy-toggle');
+        const toggleLabel = document.getElementById('toggle-label');
+        const correctTranslation = document.getElementById('correct-translation');
+
+        function sendToDataset(label) {
+            console.log("Sending data to server - Label:", label);
+            fetch('/update_dataset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    label: label,
+                    vector: {{ vector | tojson | safe }}
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Server response:', data);
+                if (data.status === 'success') {
+                    alert('Feedback submitted successfully!');
+                } else {
+                    alert('Error submitting feedback: ' + data.message);
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('An error occurred while submitting feedback.');
+            });
+        }
+
+        toggle.addEventListener('change', function() {
+            if (this.checked) {
+                toggleLabel.textContent = 'Yes';
+                correctTranslation.style.display = 'none';
+                sendToDataset('{{ prediction }}');
+            } else {
+                toggleLabel.textContent = 'No';
+                correctTranslation.style.display = 'inline-block';
+            }
+        });
+
+        correctTranslation.addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                sendToDataset(this.value);
+                this.value = '';
+            }
+        });
+    </script>
 </body>
 </html>
