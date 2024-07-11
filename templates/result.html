@@ -101,10 +101,10 @@
     
     <div class="video-container">
         <video controls>
-            <source src="{{ url_for('static', filename='uploads/' + filename) }}" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-    </div>
+                <source src="{{ url_for('static', filename='uploads/' + filename) }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
 
     <div class="feedback-container">
         <p>Was the translation accurate?</p>
@@ -114,17 +114,20 @@
         </label>
         <span id="toggle-label">Yes</span>
     </div>
-    <input type="text" id="correct-translation" placeholder="Enter correct translation">
-    
-    <p><a href="/">Translate another video</a></p>
+    <input type="text" id="correct-translation" placeholder="Enter correct translation" style="display: none;">
+    <button id="submit-feedback" style="display: inline-block;">Add to Dataset</button>
 
+    <p><a href="/">Translate another video</a></p>
+    
     <script>
         const toggle = document.getElementById('accuracy-toggle');
         const toggleLabel = document.getElementById('toggle-label');
         const correctTranslation = document.getElementById('correct-translation');
-
+        const submitButton = document.getElementById('submit-feedback');
+    
         function sendToDataset(label) {
             console.log("Sending data to server - Label:", label);
+            console.log("Vector:", { vector , tojson , safe });
             fetch('/update_dataset', {
                 method: 'POST',
                 headers: {
@@ -132,7 +135,7 @@
                 },
                 body: JSON.stringify({
                     label: label,
-                    vector: {{ vector | tojson | safe }}
+                    vector: { vector , tojson , safe }
                 }),
             })
             .then(response => response.json())
@@ -149,22 +152,28 @@
                 alert('An error occurred while submitting feedback.');
             });
         }
-
+    
         toggle.addEventListener('change', function() {
             if (this.checked) {
                 toggleLabel.textContent = 'Yes';
                 correctTranslation.style.display = 'none';
-                sendToDataset('{{ prediction }}');
             } else {
                 toggleLabel.textContent = 'No';
                 correctTranslation.style.display = 'inline-block';
             }
         });
-
-        correctTranslation.addEventListener('keyup', function(event) {
-            if (event.key === 'Enter') {
-                sendToDataset(this.value);
-                this.value = '';
+    
+        submitButton.addEventListener('click', function() {
+            if (toggle.checked) {
+                sendToDataset('{{ prediction }}');
+            } else {
+                const newLabel = correctTranslation.value.trim();
+                if (newLabel) {
+                    sendToDataset(newLabel);
+                    correctTranslation.value = '';
+                } else {
+                    alert('Please enter a correct translation before submitting.');
+                }
             }
         });
     </script>

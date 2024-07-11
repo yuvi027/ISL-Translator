@@ -30,6 +30,7 @@ def allowed_file(filename):
 def extract_pose_and_elan(video_file, label):
     pose_file = os.path.join(app.config['UPLOAD_FOLDER'], f"{label}.pose")
     try:
+        # Generate pose file
         subprocess.run(
             ['video_to_pose', '--format', 'mediapipe', '-i', video_file, '-o', pose_file], 
             check=True, 
@@ -125,6 +126,7 @@ def update_dataset():
         logger.debug(f"Current dataset - X shape: {X.shape}, y shape: {y.shape}")
 
         # Add the new data point
+        vector = vector.reshape(1, -1)  # Ensure vector is 2D
         X = np.vstack((X, vector))
         y = np.append(y, label)
 
