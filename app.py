@@ -9,6 +9,7 @@ from pose_format import Pose
 from sign_language_recognition.kaggle_asl_signs import predict
 import subprocess
 from sklearn.neighbors import KNeighborsClassifier
+import pandas as pd
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -42,22 +43,6 @@ def extract_pose_and_elan(video_file, label):
         logger.error(f"Error in video_to_pose: {e.stdout}\n{e.stderr}")
         raise RuntimeError(f"Failed to extract pose: {e}")
 
-def initialize_or_load_knn():
-    try:
-        knn = joblib.load('current_knn_model.joblib')
-        logger.info("Loaded existing KNN model")
-    except FileNotFoundError:
-        logger.info("No existing KNN model found. Initializing new model.")
-        knn = KNeighborsClassifier(n_neighbors=5)  # Adjust n_neighbors as needed
-        # Initialize with dummy data
-        X = np.array([[0] * 100])  # Adjust the dimension based on your vector size
-        y = np.array(['dummy'])
-        knn.fit(X, y)
-        joblib.dump(knn, 'current_knn_model.joblib')
-    return knn
-
-knn = initialize_or_load_knn()
-
 def predict_label(video_file):
     label = os.path.basename(video_file).split('.')[0]
     try:
@@ -71,6 +56,9 @@ def predict_label(video_file):
         
         pose = Pose.read(data_buffer)
         vector = predict(pose)
+
+        # Load the KNN model
+        knn = joblib.load('/workspaces/ISL-Translator/current_knn_model.joblib')
 
         predicted_label = knn.predict(vector.reshape(1,-1))[0]
 
@@ -120,24 +108,31 @@ def update_dataset():
 
     try:
         # Load the current dataset
-        X = knn._fit_X
-        y = knn._y
+        data = pd.read_csv('/workspaces/ISL-Translator/data/Dataset1.csv', header=None)
+        
+        # Ensure vector has 250 elements
+        if len(vector) != 250:
+            raise ValueError(f"Expected vector of length 250, but got {len(vector)}")
 
-        logger.debug(f"Current dataset - X shape: {X.shape}, y shape: {y.shape}")
+        # Create a new row with the vector and label
+        new_row = pd.DataFrame([np.append(vector, label)])
+        
+        # Concatenate the new row to the dataset
+        updated_data = pd.concat([data, new_row], ignore_index=True)
 
-        # Add the new data point
-        vector = vector.reshape(1, -1)  # Ensure vector is 2D
-        X = np.vstack((X, vector))
-        y = np.append(y, label)
+        # Save the updated dataset
+        updated_data.to_csv('/workspaces/ISL-Translator/data/Dataset1.csv', index=False, header=False)
 
-        logger.debug(f"Updated dataset - X shape: {X.shape}, y shape: {y.shape}")
-
-        # Retrain the model
+        # Retrain the KNN model
+        X = updated_data.iloc[:, :250].values
+        y = updated_data.iloc[:, 250].values
+        knn = KNeighborsClassifier(n_neighbors=1)
         knn.fit(X, y)
 
         # Save the updated model
-        joblib.dump(knn, 'current_knn_model.joblib')
-        logger.info("Model updated and saved successfully")
+        joblib.dump(knn, '/workspaces/ISL-Translator/current_knn_model.joblib')
+
+        logger.info("Dataset updated and model retrained successfully")
 
         return jsonify({"status": "success", "message": "Dataset updated and model retrained"})
     except Exception as e:

@@ -113,57 +113,56 @@ dataset.to_csv(dataset_path, index=False)
 
 
 # EVALUATION
-# #TODO: import as the model_path our knn model from drive
-# import os
-# import glob
-# import pandas as pd
-# # from sign_language_recognition.kaggle_asl_signs import predict
-# from pose_format import Pose
+import os
+import glob
+import pandas as pd
+# from sign_language_recognition.kaggle_asl_signs import predict
+from pose_format import Pose
 
-# # Specify the directory in Google Drive containing your video files
-# video_directory = '/content/drive/My Drive/EngineeringProject/videos/test'
+# Specify the directory in Google Drive containing your video files
+video_directory = '/content/drive/My Drive/EngineeringProject/videos/test'
 
-# # List all video files in the directory
-# video_files = glob.glob(os.path.join(video_directory, '*2.mp4'))
-# # Ensure the lists are sorted
-# video_files.sort()
+# List all video files in the directory
+video_files = glob.glob(os.path.join(video_directory, '*2.mp4'))
+# Ensure the lists are sorted
+video_files.sort()
 
-# # Create an empty DataFrame to hold the vectors and labels
-# eval = pd.DataFrame(columns=['Label', 'Prediction', 'Match'])
+# Create an empty DataFrame to hold the vectors and labels
+eval = pd.DataFrame(columns=['Label', 'Prediction', 'Match'])
 
-# # Helper function to normalize strings
-# def normalize_string(s):
-#     return ''.join(e for e in s.lower() if e.isalnum())
+# Helper function to normalize strings
+def normalize_string(s):
+    return ''.join(e for e in s.lower() if e.isalnum())
 
-# # Process each video, extract vectors, and add to the dataset
-# for video_file in video_files:
-#     # Example: Infer label from filename (assuming the format is 'label.mp4')
-#     label = os.path.basename(video_file).split('1')[0]
-#     print(f"Processing: {label}")
-#     prediction = predict_label(video_file)  # Assuming predict_label is a typo and should be predict
+# Process each video, extract vectors, and add to the dataset
+for video_file in video_files:
+    # Example: Infer label from filename (assuming the format is 'label.mp4')
+    label = os.path.basename(video_file).split('1')[0]
+    print(f"Processing: {label}")
+    prediction = predict_label(video_file)  # Assuming predict_label is a typo and should be predict
 
-#     # Normalize label and prediction for comparison
-#     # normalized_label = normalize_string(label)
-#     # normalized_prediction = normalize_string(prediction)
+    # Normalize label and prediction for comparison
+    # normalized_label = normalize_string(label)
+    # normalized_prediction = normalize_string(prediction)
 
-#     # Determine if they match
-#     match = 1 if label == prediction else 0
+    # Determine if they match
+    match = 1 if label == prediction else 0
 
-#     # Append to DataFrame
-#     eval = pd.concat([eval, pd.DataFrame({'Label': [label], 'Prediction': [prediction], 'Match': [match]})], ignore_index=True)
+    # Append to DataFrame
+    eval = pd.concat([eval, pd.DataFrame({'Label': [label], 'Prediction': [prediction], 'Match': [match]})], ignore_index=True)
 
-# # Calculate accuracy and number of matches
-# num_matches = eval['Match'].sum()
-# accuracy = (num_matches / len(eval)) * 100 if len(eval) > 0 else 0
+# Calculate accuracy and number of matches
+num_matches = eval['Match'].sum()
+accuracy = (num_matches / len(eval)) * 100 if len(eval) > 0 else 0
 
-# print(f"Accuracy: {accuracy}%")
-# print(f"Number of matches: {num_matches}")
-# print(f"Number of words: {len(eval)}")
+print(f"Accuracy: {accuracy}%")
+print(f"Number of matches: {num_matches}")
+print(f"Number of words: {len(eval)}")
 
-# # Add accuracy and number of matches as new rows in the DataFrame (optional)
-# eval = pd.concat([eval, pd.DataFrame({'Label': ['Accuracy'], 'Prediction': [f'{accuracy}%'], 'Match': [num_matches]})], ignore_index=True)
+# Add accuracy and number of matches as new rows in the DataFrame (optional)
+eval = pd.concat([eval, pd.DataFrame({'Label': ['Accuracy'], 'Prediction': [f'{accuracy}%'], 'Match': [num_matches]})], ignore_index=True)
 
-# # Save the dataset to Google Drive
-# eval_path = '/content/drive/My Drive/EngineeringProject/KNN-evaluation.csv'
-# eval.to_csv(eval_path, index=False)
+# Save the dataset to Google Drive
+eval_path = '/content/drive/My Drive/EngineeringProject/KNN-evaluation.csv'
+eval.to_csv(eval_path, index=False)
 

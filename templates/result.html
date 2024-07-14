@@ -106,76 +106,82 @@
             </video>
         </div>
 
-    <div class="feedback-container">
-        <p>Was the translation accurate?</p>
-        <label class="switch">
-            <input type="checkbox" id="accuracy-toggle" checked>
-            <span class="slider"></span>
-        </label>
-        <span id="toggle-label">Yes</span>
-    </div>
-    <input type="text" id="correct-translation" placeholder="Enter correct translation" style="display: none;">
-    <button id="submit-feedback" style="display: inline-block;">Add to Dataset</button>
-
-    <p><a href="/">Translate another video</a></p>
-    
-    <script>
-        const toggle = document.getElementById('accuracy-toggle');
-        const toggleLabel = document.getElementById('toggle-label');
-        const correctTranslation = document.getElementById('correct-translation');
-        const submitButton = document.getElementById('submit-feedback');
-    
-        function sendToDataset(label) {
-            console.log("Sending data to server - Label:", label);
-            console.log("Vector:", { vector , tojson , safe });
-            fetch('/update_dataset', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    label: label,
-                    vector: { vector , tojson , safe }
-                }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Server response:', data);
-                if (data.status === 'success') {
-                    alert('Feedback submitted successfully!');
+        <div class="feedback-container">
+            <p>Was the translation accurate?</p>
+            <label class="switch">
+                <input type="checkbox" id="accuracy-toggle" checked>
+                <span class="slider"></span>
+            </label>
+            <span id="toggle-label">Yes</span>
+        </div>
+        <input type="text" id="correct-translation" placeholder="Enter correct translation" style="display: none;">
+        <button id="add-to-dataset">Add to Dataset</button>
+        
+        <p><a href="/">Translate another video</a></p>
+        
+        <script>
+            const toggle = document.getElementById('accuracy-toggle');
+            const toggleLabel = document.getElementById('toggle-label');
+            const correctTranslation = document.getElementById('correct-translation');
+            const addToDatasetButton = document.getElementById('add-to-dataset');
+        
+            // Store the vector as a JavaScript variable
+            const vector = {{ vector|tojson|safe }};
+        
+            function sendToDataset(label) {
+                console.log("Sending data to server - Label:", label);
+                console.log("Vector:", vector);
+                fetch('/update_dataset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        label: label,
+                        vector: vector
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Server response:', data);
+                    if (data.status === 'success') {
+                        alert('Feedback submitted successfully!');
+                    } else {
+                        alert('Error submitting feedback: ' + data.message);
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    alert('An error occurred while submitting feedback.');
+                });
+            }
+        
+            toggle.addEventListener('change', function() {
+                if (this.checked) {
+                    toggleLabel.textContent = 'Yes';
+                    correctTranslation.style.display = 'none';
                 } else {
-                    alert('Error submitting feedback: ' + data.message);
+                    toggleLabel.textContent = 'No';
+                    correctTranslation.style.display = 'inline-block';
                 }
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-                alert('An error occurred while submitting feedback.');
             });
-        }
-    
-        toggle.addEventListener('change', function() {
-            if (this.checked) {
-                toggleLabel.textContent = 'Yes';
-                correctTranslation.style.display = 'none';
-            } else {
-                toggleLabel.textContent = 'No';
-                correctTranslation.style.display = 'inline-block';
-            }
-        });
-    
-        submitButton.addEventListener('click', function() {
-            if (toggle.checked) {
-                sendToDataset('{{ prediction }}');
-            } else {
-                const newLabel = correctTranslation.value.trim();
-                if (newLabel) {
-                    sendToDataset(newLabel);
-                    correctTranslation.value = '';
+        
+            addToDatasetButton.addEventListener('click', function() {
+                let label;
+                if (toggle.checked) {
+                    label = '{{ prediction }}';
                 } else {
-                    alert('Please enter a correct translation before submitting.');
+                    label = correctTranslation.value.trim();
+                    if (!label) {
+                        alert('Please enter a correct translation before submitting.');
+                        return;
+                    }
                 }
-            }
-        });
-    </script>
+                sendToDataset(label);
+            });
+        
+            // Initialize the toggle state
+            correctTranslation.style.display = toggle.checked ? 'none' : 'inline-block';
+        </script>
 </body>
 </html>
