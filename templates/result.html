@@ -14,7 +14,7 @@
         h1 { 
             color: #1e9dbd; 
             font-family: Verdana, sans-serif; 
-            font-size: 40px;
+            font-size: 50px;
         }
         .result { 
             font-size: 50px;
@@ -96,7 +96,7 @@
 <body>
     <h1>Sign Language Translation Result</h1>
     <div class="result">
-        <p><strong>{{ prediction }}</strong></p>
+        <p><strong>Sign: {{ prediction }}</strong></p>
     </div>
     
     <div class="video-container">
@@ -109,12 +109,12 @@
         <div class="feedback-container">
             <p>Was the translation accurate?</p>
             <label class="switch">
-                <input type="checkbox" id="accuracy-toggle" checked>
+                <input type="checkbox" id="accuracy-toggle">
                 <span class="slider"></span>
             </label>
-            <span id="toggle-label">Yes</span>
+            <span id="toggle-label">No</span>
         </div>
-        <input type="text" id="correct-translation" placeholder="Enter correct translation" style="display: none;">
+        <input type="text" id="correct-translation" placeholder="Enter correct translation">
         <button id="add-to-dataset">Add to Dataset</button>
         
         <p><a href="/">Translate another video</a></p>
@@ -160,28 +160,29 @@
                 if (this.checked) {
                     toggleLabel.textContent = 'Yes';
                     correctTranslation.style.display = 'none';
+                    addToDatasetButton.style.display = 'none';
+                    sendToDataset('{{ prediction }}');
                 } else {
                     toggleLabel.textContent = 'No';
                     correctTranslation.style.display = 'inline-block';
+                    addToDatasetButton.style.display = 'inline-block';
                 }
             });
         
             addToDatasetButton.addEventListener('click', function() {
-                let label;
-                if (toggle.checked) {
-                    label = '{{ prediction }}';
-                } else {
-                    label = correctTranslation.value.trim();
-                    if (!label) {
-                        alert('Please enter a correct translation before submitting.');
-                        return;
-                    }
+                let label = correctTranslation.value.trim();
+                if (!label) {
+                    alert('Please enter a correct translation before submitting.');
+                    return;
                 }
                 sendToDataset(label);
             });
         
             // Initialize the toggle state
-            correctTranslation.style.display = toggle.checked ? 'none' : 'inline-block';
+            toggle.checked = false;
+            toggleLabel.textContent = 'No';
+            correctTranslation.style.display = 'inline-block';
+            addToDatasetButton.style.display = 'inline-block';
         </script>
 </body>
 </html>
