@@ -11,4 +11,5 @@ The root directory includes essential scripts and models, such as “app.py” (
 The entire codebase is accessible through a GitHub repository, and the website can be accessed via a provided URL. The user interface is designed to be intuitive, allowing users to upload videos for translation and provide feedback with ease.
 ## Some Useful Links
 First Collab (Tracking): https://colab.research.google.com/drive/1jcPzlofFFmNw_83Ff9pZwkeE6b0SlRb3?ouid=104290483502975503034&usp=drive_link 
+
 Second Collab (Pipeline): https://colab.research.google.com/drive/1hOjBiOLSbb_qAnK5wlvaJYaBHaCJRAfG?usp=sharing 
