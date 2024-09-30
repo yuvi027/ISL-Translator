@@ -77,4 +77,4 @@ Second Collab (Pipeline): https://colab.research.google.com/drive/1hOjBiOLSbb_qA
 ## Acknowledgments
 A huge thank you to Dr. Amit Moryossef and Eliyahu Horwitz, who throughout the year gave us tips and comments and helped us really move forward with the project. We couldn't have done this without you!
 
-Also, many thanks to Daphne, Yuri, Nir, who have taught and guided us this entire year.
+Also, many thanks to Daphna Weinshall, Yuri Klebanov, Nir Sweed, who have taught and guided us this entire year.
