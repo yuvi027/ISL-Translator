@@ -28,6 +28,7 @@ interpreter.allocate_tensors()
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# This function gets a video path from our video training dataset, and extract the pose and elan file for the sign
 def extract_pose_and_elan(video_file, label):
     pose_file = os.path.join(app.config['UPLOAD_FOLDER'], f"{label}.pose")
     try:
@@ -43,6 +44,7 @@ def extract_pose_and_elan(video_file, label):
         logger.error(f"Error in video_to_pose: {e.stdout}\n{e.stderr}")
         raise RuntimeError(f"Failed to extract pose: {e}")
 
+# Given a word we want to translate, it gets the elan and pose fils, and returns the Kaggle model output vector.
 def predict_label(video_file):
     label = os.path.basename(video_file).split('.')[0]
     try:
@@ -70,6 +72,7 @@ def predict_label(video_file):
         traceback.print_exc()
         raise
 
+# This is the function to upload a file to the database
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
@@ -88,6 +91,7 @@ def upload_file():
             return redirect(url_for('translate', filename=filename))
     return render_template('upload.html')
 
+# This is the function called when the button translate is pressed
 @app.route('/translate/<filename>')
 def translate(filename):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -98,6 +102,7 @@ def translate(filename):
         flash(f"An error occurred: {str(e)}")
         return redirect(url_for('upload_file'))
 
+# This is the app called to update the database, after the video is translated, with the logics vector and the translation
 @app.route('/update_dataset', methods=['POST'])
 def update_dataset():
     data = request.json
