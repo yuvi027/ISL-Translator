@@ -6,23 +6,12 @@ import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
 import joblib
 from pose_format import Pose
-
-
-# Install necessary packages
-# pip install git+https://github.com/sign-language-processing/pose.git
-# pip install pose-format
-# pip install mediapipe vidgear
-# pip install git+https://github.com/sign-language-processing/segmentation
-# pip install git+https://github.com/sign-language-processing/recognition
-# pip install scikit-learn pandas joblib
-# pip install flask
-# pip install tensorflow
-# pip install tensorflow_hub
-# pip install flask numpy tensorflow tensorflow-hub opencv-python-headless
+from sign_language_recognition.kaggle_asl_signs import predict
+from pose_format import Pose
 
 from IPython.display import Video
 
-
+# This function gets a video path from our video training dataset, and extract the pose and elan file for the sign
 def extract_pose_and_elan(
 		video_file="/content/drive/My Drive/EngineeringProject/videos/train/Can1.mp4",
 		label="Can"):
@@ -39,6 +28,7 @@ def extract_pose_and_elan(
 	return pose_file
 # interpreter = tf.lite.Interpreter(model_path="model.tflite")
 
+# Given a word we want to translate, it gets the elan and pose fils, and returns the Kaggle model output vector.
 def predict_label(new_video_file, model_name="kaggle_asl_signs", knn_model_path="/workspaces/ISL-Translator/knn_model.joblib"):
     # Extract pose and ELAN files from the new video
     new_pose_file = extract_pose_and_elan(new_video_file)
@@ -57,11 +47,6 @@ def predict_label(new_video_file, model_name="kaggle_asl_signs", knn_model_path=
     prediction = knn.predict([vector])
     return prediction
 
-import os
-import glob
-import pandas as pd
-from sign_language_recognition.kaggle_asl_signs import predict
-from pose_format import Pose
 
 # Specify the directory in the project containing your video files
 video_directory = os.path.join('data', 'videos', 'train')
